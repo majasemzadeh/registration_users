@@ -1,9 +1,10 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from ckeditor.fields import RichTextField
 
 
-def validate_iranian_national_id(value):
+def validate_national_id(value):
 
     if len(value) != 10:
         raise ValidationError('National ID must be exactly 10 digits.')
@@ -18,23 +19,48 @@ def validate_iranian_national_id(value):
     raise ValidationError('Invalid National ID checksum.')
 
 
-class DataCSV(models.Model):
-
-    csv_file = models.FileField()
-    is_paused = models.BooleanField(default=False)
-    created_date = models.DateTimeField(auto_now_add=True)
-
-
-class User(models.Model):
+class UserData(models.Model):
     national_id = models.CharField(
         max_length=10,
         validators=[
             RegexValidator(regex=r'^[0-9]*$', message='National ID must contain only digits.'),
-            validate_iranian_national_id,
+            validate_national_id,
         ],
         unique=True,
     )
+    email = models.EmailField()
 
-    email = models.EmailField(max_length=255, unique=True)
-    created_date = models.DateTimeField(auto_now_add=True)
-    is_sent = models.BooleanField(default=False)
+
+class EmailStatusManager(models.Manager):
+    def get_or_create_singleton(self, **kwargs):
+        obj, created = self.get_or_create(**kwargs)
+        return obj
+
+
+class EmailStatus(models.Model):
+    total_emails = models.IntegerField()
+    emails_sent = models.IntegerField(default=0)
+    is_sending = models.BooleanField(default=False)
+
+    objects = EmailStatusManager()
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super(EmailStatus, self).save(*args, **kwargs)
+
+
+class EmailTemplateManager(models.Manager):
+    def get_or_create_singleton(self, **kwargs):
+        obj, created = self.get_or_create(**kwargs)
+        return obj
+
+
+class EmailTemplate(models.Model):
+    subject = models.CharField(max_length=255)
+    body = RichTextField()
+
+    objects = EmailTemplateManager()
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super(EmailTemplate, self).save(*args, **kwargs)
