@@ -9,22 +9,30 @@ This is a test project for registering users from a large CSV file.
    ```bash
    pip install -r requirements.txt
    ```
+   
+2. Make Migrations:
+   ```bash
+   python manage.py makemigrations
+   ```
 
-2. Apply database migrations:
+3. Apply database migrations:
    ```bash
    python manage.py migrate
    ```
 
-3. Create a superuser (admin) for accessing the Django admin panel:
+4. Create a superuser (admin) for accessing the Django admin panel:
    ```bash
    python manage.py createsuperuser
    ```
 
-4. Start the Django development server:
+5. Start the Django development server:
    ```bash
    python manage.py runserver
    ```
-Now, you can access the Django admin panel at [http://localhost:8000/admin](http://localhost:8000/admin) and use the superuser credentials.
+   
+
+Now, you can access the Django admin panel at (http://localhost:8000/admin) and use the superuser credentials, and Change the status and edit users, Create & Edit Email Template .
+
 
 ## Frontend (React)
 
@@ -53,7 +61,7 @@ npm run build
 ## Project Structure
 
 - `backend/`: Django, root project and registration_user settings
-- `frontend/`: React vite-project
+- `frontend/`: React shatel-front
 - `requirements.txt`: List of Python dependencies
 - `package.json`: Node.js package configuration
 - `tsconfig.json`: TypeScript configuration for the React app
