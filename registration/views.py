@@ -1,3 +1,4 @@
+import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
 import csv
@@ -8,8 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CSVUploadSerializer
-from .models import EmailStatus
-from .utils import send_email_background, process_row
+from .models import EmailStatus, UserDataStatus
+from .utils import send_email_background, process_row, insert_data
 
 
 class CSVUploadView(APIView):
@@ -27,17 +28,10 @@ class CSVUploadView(APIView):
                 content = raw_content.decode(detected_encoding)
                 rows = csv.reader(content.splitlines())
 
-                with transaction.atomic():
-                    with ThreadPoolExecutor() as executor:
-                        errors = list(executor.map(process_row, rows))
+                thread = threading.Thread(target=insert_data, args=(rows,))
+                thread.start()
 
-                    error_messages = [error for error in errors if error]
-                    if error_messages:
-
-                        return Response({'errors': error_messages}, status=status.HTTP_400_BAD_REQUEST)
-                    else:
-
-                        return Response({'message': 'CSV file upload started successfully.'},
+                return Response({'message': 'CSV file upload started successfully.'},
                                         status=status.HTTP_202_ACCEPTED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -60,3 +54,13 @@ class ManageSendEmail(APIView):
         email_status = EmailStatus.objects.get(id=1)
         return JsonResponse({'total_emails': email_status.total_emails, 'emails_sent': email_status.emails_sent, 'is_sending': email_status.is_sending})
 
+
+class RegistrationStatus(APIView):
+
+    def get(self, request):
+        data_status = UserDataStatus.objects.all().last()
+        if data_status.errors:
+            errors = json.loads(data_status.errors)
+        else:
+            errors = []
+        return Response({"done": data_status.inserted, "errors": errors})
