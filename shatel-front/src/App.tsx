@@ -8,6 +8,7 @@ function App() {
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [dataStatusIntervalId, setDataStatusIntervalId] = useState<number | null>(null);
 
   useEffect(() => {
     // Function to fetch initial progress data and update the button text
@@ -79,6 +80,42 @@ function App() {
             });
           } else {
             alert('CSV file upload started successfully.');
+
+            // Call data_status every 20 seconds
+            const intervalId = setInterval(() => {
+              fetch('http://localhost:8000/api/data_status', {
+                method: 'GET',
+              })
+                .then((response) => {
+                  if (response.ok) {
+                    return response.json();
+                  } else {
+                    throw new Error('Data status request failed');
+                  }
+                })
+                .then((dataStatus) => {
+                  if (!dataStatus.done) {
+                    // Continue calling and check again in 20 seconds
+                    // You can update the state or take any other action based on dataStatus.errors
+                    console.log('Data not done yet.');
+                  } else {
+                    // Data is done, show error messages
+                    if (dataStatus.errors && dataStatus.errors.length > 0) {
+                      dataStatus.errors.forEach((error) => {
+                        setErrorCount((prevCount) => (prevCount !== null ? prevCount + 1 : 1));
+                        setErrorMessages((prevMessages) => [...prevMessages, error]);
+                      });
+                    }
+                    clearInterval(intervalId); // Stop calling data_status
+                  }
+                })
+                .catch((error) => {
+                  console.error('Data status request error:', error);
+                });
+            }, 20000); // 20 seconds interval
+
+            // Save the interval ID to clear it later
+            setDataStatusIntervalId(intervalId);
           }
         })
         .catch((error) => {
