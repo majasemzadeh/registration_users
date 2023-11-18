@@ -19,6 +19,11 @@ def validate_national_id(value):
     raise ValidationError('Invalid National ID checksum.')
 
 
+class UserDataStatus(models.Model):
+    errors = models.TextField(null=True, blank=True)
+    inserted = models.BooleanField(default=False)
+
+
 class UserData(models.Model):
     national_id = models.CharField(
         max_length=10,
@@ -29,6 +34,7 @@ class UserData(models.Model):
         unique=True,
     )
     email = models.EmailField()
+    created_date = models.DateField(auto_now_add=True)
 
 
 class EmailStatusManager(models.Manager):
